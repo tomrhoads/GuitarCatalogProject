@@ -1,0 +1,37 @@
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="/static/styles.css">	
+	</head>
+		<body>
+			<div class="header"><h1> {{ guitarshop.name }} <h1></div>
+			
+			<a href= '{{url_for('newListItem', guitarshop_id = guitarshop_id)}}'>Add New Guitar</a>
+			<a href = '{{url_for('guitarCatalog')}}'> Back To Stores </a>
+		</br>
+		</br>
+			{% for i in items %}
+		
+			<div class="item">
+				<h2>
+			
+					{{i.name}}
+					</br>
+		
+					{{i.description}}
+					</br>
+		
+					${{i.price}}
+				<h2>
+			
+				<a href= '{{url_for('editListItem', guitarshop_id = guitarshop_id, 
+						list_id = i.id)}}' >Edit</a>
+				</br>
+				<a href= '{{url_for('deleteListItem', guitarshop_id = guitarshop_id, 
+						list_id = i.id)}}' >Delete</a>
+			</div>
+			
+			</br>
+			
+			{% endfor %}
+		</body>
+</html>

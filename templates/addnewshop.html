@@ -1,0 +1,19 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="/static/styles.css">
+</head>
+<body>
+<h1> Add New Store <h1>
+	<form action="{{url_for('newStore')}}" method='post'>
+	<h2><dl>
+	
+	<dt>New Store Name:</dt>
+		<dd><input type ='text' size='35' name='name' required></dd>
+     
+	</dl>
+	<h2>
+	<input type='submit' value='Create'>
+	<input type='button' value='Back' onclick="history.go(-1);return true;">
+</form>
+</body>
+</html>

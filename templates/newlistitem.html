@@ -1,0 +1,27 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="/static/styles.css">
+</head>
+<body>
+<h1> Add New Guitar <h1>
+	<form action="{{url_for('newListItem', guitarshop_id=guitarshop_id)}}" method='post'>
+	<h2><dl>
+	
+	<dt>Make and Model:</dt>
+		<dd><input type ='text' size='35' name='name' required></dd>
+            
+    <dt>Type:</dt>
+        <dd><input type ='radio' name='description' value='Electric' checked>Electric</dd>
+        <dd><input type ='radio' name='description' value='Acoustic'>Acoustic</dd>
+        <dd><input type ='radio' name='description' value='Classical'>Classical</dd>
+			
+	<dt>Price:</dt>
+        <dd>$<input type = 'text' size = '8' name='price' required></dd>
+		
+	</dl>
+	<h2>
+	<input type='submit' value='Create'>
+	<input type='button' value='Back' onclick="history.go(-1);return true;">
+</form>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="/static/styles.css">
+</head>
+<body>
+<h1> Edit Guitars <h1>
+<form action="{{url_for('editListItem', guitarshop_id = guitarshop_id, list_id = item.id)}}" method = 'post'>
+
+<h2><dl>
+	<dt>Name:</dt>
+		<dd><input type = 'text' size='30' name='name' placeholder='{{item.name}}'></dd>
+		
+	<dt>Type:</dt>
+
+	{% if item.description == 'Acoustic' %}
+		<dd><input type ='radio' name='description' value='Acoustic'checked >Acoustic</dd>
+	{%else%}
+	<dd><input type ='radio' name='description' value='Acoustic' >Acoustic</dd>
+    {% endif %}
+
+    {% if item.description == 'Electric' %}
+       <dd><input type ='radio' name='description' value='Electric' checked>Electric</dd>
+
+    {%else%}
+		<dd><input type ='radio' name='description' value='Electric'>Electric</dd>
+    {% endif %}
+
+	{% if item.description == 'Classical'%}
+		<dd><input type ='radio' name='description' value='Classical'checked >Classical</dd>
+
+	{% else %}
+	   <dd><input type ='radio' name='description' value='Classical'>Classical</dd>
+
+	{% endif %}
+	
+	<dt>Cost:</dt>
+		<dd><h3>$<input type = 'text' size='30' name='price' placeholder='{{item.price}}'></dd><h3>
+
+</dl><h2>
+
+<input type='submit' value='Submit Edit'>
+
+<a href = '{{url_for('guitarShopList', guitarshop_id = guitarshop_id,)}}'> Cancel </a>
+</form>
+</body>
+</html>

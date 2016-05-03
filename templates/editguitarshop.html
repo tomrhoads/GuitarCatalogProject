@@ -1,0 +1,20 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="/static/styles.css">
+</head>
+<body>
+<h1> Edit Guitar Store <h1>
+<form action="{{url_for('editGuitarShop', id=shop.id)}}" method = 'post'>
+
+<h2><dl>
+	<dt>Name:</dt>
+		<dd><input type = 'text' size='30' name='name' placeholder='{{shop.name}}'></dd>
+		
+</dl><h2>
+
+<input type='submit' value='Submit Edit'>
+
+<a href = '{{url_for('guitarCatalog')}}'> Cancel </a>
+</form>
+</body>
+</html>
