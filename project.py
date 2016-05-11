@@ -95,7 +95,7 @@ def gconnect():
     login_session['gplus_id'] = gplus_id
 
     # Get user info
-    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo?alt=json"
     params = {'access_token': credentials.access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url, params=params)
 
@@ -104,12 +104,11 @@ def gconnect():
     login_session['username'] = data['name']
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
-	
-	#see if user exists, if not make a new one
+
     user_id = getUserID(login_session['email'])
     if not user_id:
-	user_id = createUser(login_session)
-	login_session['user_id'] = user_id
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
 
     output = ''
     output += '<h1>Welcome, '
@@ -121,8 +120,29 @@ def gconnect():
     flash("you are now logged in as %s" % login_session['username'])
     print "done!"
     return output
+    
 
 
+def createUser(login_session):
+    newUser = User(name=login_session['username'], email=login_session[
+                   'email'], picture=login_session['picture'])
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).one()
+    return user.id
+
+
+def getUserInfo(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    return user
+
+
+def getUserID(email):
+    try:
+        user = session.query(User).filter_by(email=email).one()
+        return user.id
+    except:
+        return None
 		
 @app.route("/gdisconnect")
 def gdisconnect():
@@ -175,43 +195,43 @@ def listItemJSON(guitarshop_id, list_id):
 @app.route('/')
 @app.route('/guitarcatalog/', methods = ['GET', 'POST'])
 def guitarCatalog():
-	guitarshop = session.query(GuitarShop).all()
-	return render_template('guitarcatalog.html', guitarshop=guitarshop)
+	guitarshops = session.query(GuitarShop).order_by(asc(GuitarShop.name))
+	return render_template('guitarcatalog.html', guitarshops=guitarshops)
 
+	
 @app.route('/guitarcatalog/<int:id>/editshop',
            methods=['GET', 'POST'])
 def editGuitarShop(id):
+	editedShop = session.query(GuitarShop).filter_by(id=id).one()
 	if 'username' not in login_session:
 		return redirect('/login')
-		editedShop = session.query(GuitarShop).filter_by(id=id).one()
-		if request.method == 'POST':
-			if request.form['name']:
-				editedShop.name = request.form['name']
-				user_id=login_session['user_id']
-				session.add(editedShop)
-				session.commit()
-				return redirect(url_for('guitarCatalog', id=id))
-		else:
-			return render_template('editguitarshop.html', id=id, shop=editedShop)
+	if editedShop.user_id != login_session['user_id']:
+		return "<script>function myFunction() {alert('You are not authorized to edit this store. Please create your own store in order to edit.');}</script><body onload='myFunction()''>"
+	if request.method == 'POST':
+		if request.form['name']:
+			editedShop.name = request.form['name']
+			flash('Shop %s Successfully Edited' % editedShop.name)
+			return redirect(url_for('guitarCatalog'))
+	else:
+		return render_template('editguitarshop.html', shop=editedShop)
 
 
-@app.route('/guitarshops/<int:guitarshop_id>/', methods = ['GET', 'POST'])
-def guitarShopList(guitarshop_id):
+@app.route('/guitarshops/<int:user_id>/<int:guitarshop_id>/', methods = ['GET', 'POST'])
+def guitarShopList(user_id, guitarshop_id):
     guitarshop = session.query(GuitarShop).filter_by(id=guitarshop_id).one()
     items = session.query(GuitarItem).filter_by(guitarshop_id=guitarshop_id)
     return render_template(
-        'guitarshops.html', guitarshop=guitarshop, items=items, guitarshop_id=guitarshop_id)
+        'guitarshops.html', guitarshop=guitarshop, items=items, guitarshop_id=guitarshop_id, user_id=user_id)
 
 @app.route('/guitarcatalog/newstore', methods=['GET', 'POST'])
 def newStore():
 	if 'username' not in login_session:
 		return redirect('/login')
-		if request.method == 'POST':
-			newStore = GuitarShop(name=request.form['name'])
-			user_id=login_session['user_id']
-			session.add(newStore)
-			flash('New Shop Created')
-			session.commit()
+	if request.method == 'POST':
+		newStore = GuitarShop(name=request.form['name'], user_id=login_session['user_id'])
+		session.add(newStore)
+		flash('New Shop Created')
+		session.commit()
 		return redirect(url_for('guitarCatalog'))
 	else:
 		return render_template('addnewshop.html')
@@ -220,13 +240,13 @@ def newStore():
 def newListItem(guitarshop_id):
 	if 'username' not in login_session:
 		return redirect('/login')
-		if request.method == 'POST':
-			newItem = GuitarItem(name=request.form['name'], description=request.form[ \
+	if request.method == 'POST':
+		newItem = GuitarItem(name=request.form['name'], description=request.form[ \
 			'description'], price=request.form['price'], guitarshop_id=guitarshop_id, user_id= \
 			guitarshop.user_id)
-			session.add(newItem)
-			user_id=login_session['user_id']
-			session.commit()
+		session.add(newItem)
+		user_id=login_session['user_id']
+		session.commit()
 		return redirect(url_for('guitarShopList', guitarshop_id=guitarshop_id))
 	else:
 		return render_template('newlistitem.html', guitarshop_id=guitarshop_id)
@@ -237,21 +257,21 @@ def newListItem(guitarshop_id):
 def editListItem(guitarshop_id, list_id):
 	if 'username' not in login_session:
 		return redirect('/login')
-		editedItem = session.query(GuitarItem).filter_by(id=list_id).one()
-		if request.method == 'POST':
-			if request.form['name']:
-				editedItem.name = request.form['name']
-			if request.form['description']:
-				editedItem.description = request.form['description']
-			if request.form['price']:
-				editedItem.price = request.form['price']
-			user_id=login_session['user_id']
-			session.add(editedItem)
-			session.commit()
-			flash('Guitar Successfully Edited')
-			return redirect(url_for('guitarShopList', guitarshop_id=guitarshop_id))
-		else:
-			return render_template('editguitaritem.html', guitarshop_id=guitarshop_id, list_id=list_id, item=editedItem)
+	editedItem = session.query(GuitarItem).filter_by(id=list_id).one()
+	if request.method == 'POST':
+		if request.form['name']:
+			editedItem.name = request.form['name']
+		if request.form['description']:
+			editedItem.description = request.form['description']
+		if request.form['price']:
+			editedItem.price = request.form['price']
+		user_id=login_session['user_id']
+		session.add(editedItem)
+		session.commit()
+		flash('Guitar Successfully Edited')
+		return redirect(url_for('guitarShopList', guitarshop_id=guitarshop_id))
+	else:
+		return render_template('editguitaritem.html', guitarshop_id=guitarshop_id, list_id=list_id, item=editedItem)
 
 
 @app.route('/guitarshops/<int:guitarshop_id>/<int:list_id>/delete',
@@ -259,38 +279,18 @@ def editListItem(guitarshop_id, list_id):
 def deleteListItem(guitarshop_id, list_id):
 	if 'username' not in login_session:
 		return redirect('/login')
-		itemToDelete = session.query(GuitarItem).filter_by(id=list_id).one()
-		if request.method == 'POST':
-			session.delete(itemToDelete)
-			user_id=login_session['user_id']
-			session.commit()
-			return redirect(url_for('guitarShopList', guitarshop_id=guitarshop_id))
-		else:
-			return render_template('deleteguitaritem.html', item=itemToDelete)
-
-def createUser(login_session):
-    newUser = User(name=login_session['username'], email=login_session[
-                   'email'], picture=login_session['picture'])
-    session.add(newUser)
-    session.commit()
-    user = session.query(User).filter_by(email=login_session['email']).one()
-    return user.id
+	itemToDelete = session.query(GuitarItem).filter_by(id=list_id).one()
+	if request.method == 'POST':
+		session.delete(itemToDelete)
+		user_id=login_session['user_id']
+		session.commit()
+		return redirect(url_for('guitarShopList', guitarshop_id=guitarshop_id))
+	else:
+		return render_template('deleteguitaritem.html', item=itemToDelete)
 
 
-def getUserInfo(user_id):
-    user = session.query(User).filter_by(id=user_id).one()
-    return user
-
-
-def getUserID(email):
-    try:
-        user = session.query(User).filter_by(email=email).one()
-        return user.id
-    except:
-        return None
 
 if __name__ == '__main__':
 	app.secret_key = 'MKGtY6vH_LRF6iv8qmWXafj1'
 	app.debug = True
 	app.run(host='0.0.0.0', port=5000)
-	
