@@ -124,11 +124,9 @@ def gconnect():
 
 
 def createUser(login_session):
-    newUser = User(name=login_session['username'], email=login_session[
-                   'email'], picture=login_session['picture'])
+    user = session.query(User).filter_by(email=login_session['email']).one()
     session.add(newUser)
     session.commit()
-    user = session.query(User).filter_by(email=login_session['email']).one()
     return user.id
 
 
@@ -216,12 +214,12 @@ def editGuitarShop(id):
 		return render_template('editguitarshop.html', shop=editedShop)
 
 
-@app.route('/guitarshops/<int:user_id>/<int:guitarshop_id>/', methods = ['GET', 'POST'])
-def guitarShopList(user_id, guitarshop_id):
+@app.route('/guitarshops/<int:guitarshop_id>/', methods = ['GET', 'POST'])
+def guitarShopList(guitarshop_id):
     guitarshop = session.query(GuitarShop).filter_by(id=guitarshop_id).one()
     items = session.query(GuitarItem).filter_by(guitarshop_id=guitarshop_id)
     return render_template(
-        'guitarshops.html', guitarshop=guitarshop, items=items, guitarshop_id=guitarshop_id, user_id=user_id)
+        'guitarshops.html', guitarshop=guitarshop, items=items, guitarshop_id=guitarshop_id)
 
 @app.route('/guitarcatalog/newstore', methods=['GET', 'POST'])
 def newStore():
@@ -294,3 +292,4 @@ if __name__ == '__main__':
 	app.secret_key = 'MKGtY6vH_LRF6iv8qmWXafj1'
 	app.debug = True
 	app.run(host='0.0.0.0', port=5000)
+	
