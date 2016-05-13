@@ -9,17 +9,23 @@
 			
 		</br>
 		</br>
-			<div class="item">
-			{% for i in guitarshop %}
+			{% for i in guitarshops %}
 		
-			<h2>{{i.name}}<h2>
-			<a href = '{{url_for('guitarShopList', guitarshop_id=i.id, guitarshop=guitarshop)}}'><h3>See Inventory<h3></a>			
-			<a href= '{{url_for('editGuitarShop', id=i.id, shop=editedShop)}}' ><h3>Edit Store Name<h3></a>			
+			<div class="item">
+			
+			<h2>
+			
+				{{i.name}}
+			<h2>
+			<a href = '{{url_for('guitarShopList', guitarshop_id=i.id, guitarshop=guitarshop)}}'><h3>See Inventory<h3></a>
 			</br>
-			{% endfor %}
+			<a href= '{{url_for('editGuitarShop', id=i.id)}}' ><h3>Edit Store Name<h3></a>
+			
 			</div>
 			
 			</br>
+			
+			{% endfor %}
 		
 			
 		</body>
