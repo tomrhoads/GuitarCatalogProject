@@ -107,7 +107,7 @@ def gconnect():
 
     user_id = getUserID(login_session['email'])
     if not user_id:
-        user_id = createUser(login_session)
+		user_id = createUser(login_session)
     login_session['user_id'] = user_id
 
     output = ''
@@ -124,9 +124,10 @@ def gconnect():
 
 
 def createUser(login_session):
-    user = session.query(User).filter_by(email=login_session['email']).one()
+    newUser = User(name=login_session['username'], email=login_session['email'], picture=login_session['picture'])
     session.add(newUser)
     session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).one()
     return user.id
 
 
@@ -151,7 +152,9 @@ def gdisconnect():
 		print 'Access token is None'
 		response = make_response(json.dumps('Current user not connected.'), 401)
 		response.headers['Content_Type'] = 'application/json'
+		return redirect('/publicguitarcatalog')
 		return response
+		
 	
 	#Execute HTTP GET request to revoke the current token.
 	url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' %login_session['access_token']
@@ -169,7 +172,9 @@ def gdisconnect():
 		
 		response = make_response(json.dumps('Successfully disconnected.'), 200)
 		response.headers['Content_Type'] = 'application/json'
+		return redirect('/publicguitarcatalog')
 		return response
+		
 	else:
 		response = make_response(json.dumps('Failed to revoke token for given user.'), 400)
 		response.headers['Content-Type'] = 'application/json'
@@ -189,20 +194,28 @@ def listItemJSON(guitarshop_id, list_id):
     guitarItem = session.query(GuitarItem).filter_by(id=list_id).one()
     return jsonify(GuitarItem=guitarItem.serialize)
 
-
 @app.route('/')
+@app.route('/publicguitarcatalog/', methods = ['GET', 'POST'])
+def publicGuitarCatalog():
+	guitarshops = session.query(GuitarShop).order_by(asc(GuitarShop.name))
+	return render_template('publicguitarcatalog.html', guitarshops=guitarshops)
+
+
 @app.route('/guitarcatalog/', methods = ['GET', 'POST'])
 def guitarCatalog():
 	guitarshops = session.query(GuitarShop).order_by(asc(GuitarShop.name))
-	return render_template('guitarcatalog.html', guitarshops=guitarshops)
+	if 'username' not in login_session:
+		return redirect('/login')
+	else:
+		return render_template('guitarcatalog.html', guitarshops=guitarshops)
 
 	
 @app.route('/guitarcatalog/<int:id>/editshop',
            methods=['GET', 'POST'])
 def editGuitarShop(id):
-	editedShop = session.query(GuitarShop).filter_by(id=id).one()
 	if 'username' not in login_session:
 		return redirect('/login')
+	editedShop = session.query(GuitarShop).filter_by(id=id).one()
 	if editedShop.user_id != login_session['user_id']:
 		return "<script>function myFunction() {alert('You are not authorized to edit this store. Please create your own store in order to edit.');}</script><body onload='myFunction()''>"
 	if request.method == 'POST':
@@ -213,14 +226,22 @@ def editGuitarShop(id):
 	else:
 		return render_template('editguitarshop.html', shop=editedShop)
 
+@app.route('/publicguitarshops/<int:guitarshop_id>/', methods = ['GET', 'POST'])
+def publicGuitarShopList(guitarshop_id):
+    guitarshop = session.query(GuitarShop).filter_by(id=guitarshop_id).one()
+    items = session.query(GuitarItem).filter_by(guitarshop_id=guitarshop_id)
+    return render_template(
+        'publicguitarshops.html', guitarshop=guitarshop, items=items, guitarshop_id=guitarshop_id)
 
-@app.route('/guitarshops/<int:guitarshop_id>/', methods = ['GET', 'POST'])
+@app.route('/guitarshops/<int:guitarshop_id>/', methods=['GET', 'POST'])
 def guitarShopList(guitarshop_id):
     guitarshop = session.query(GuitarShop).filter_by(id=guitarshop_id).one()
     items = session.query(GuitarItem).filter_by(guitarshop_id=guitarshop_id)
     return render_template(
         'guitarshops.html', guitarshop=guitarshop, items=items, guitarshop_id=guitarshop_id)
 
+	
+	
 @app.route('/guitarcatalog/newstore', methods=['GET', 'POST'])
 def newStore():
 	if 'username' not in login_session:
@@ -241,7 +262,7 @@ def newListItem(guitarshop_id):
 	if request.method == 'POST':
 		newItem = GuitarItem(name=request.form['name'], description=request.form[ \
 			'description'], price=request.form['price'], guitarshop_id=guitarshop_id, user_id= \
-			guitarshop.user_id)
+			guitarshop_id)
 		session.add(newItem)
 		user_id=login_session['user_id']
 		session.commit()
@@ -292,4 +313,4 @@ if __name__ == '__main__':
 	app.secret_key = 'MKGtY6vH_LRF6iv8qmWXafj1'
 	app.debug = True
 	app.run(host='0.0.0.0', port=5000)
-	
+
